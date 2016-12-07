@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "725305386985",
+    "firebase_url": "https://fir-1f3a2.firebaseio.com",
+    "project_id": "fir-1f3a2",
+    "storage_bucket": "fir-1f3a2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:725305386985:android:e757b1ff9c96cbbd",
+        "android_client_info": {
+          "package_name": "com.example.sayla.firebase"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "725305386985-ru9p94mjpu4u9altvlhppmcdjcl7bmf5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASk3SdPLA_ElVqHzJwgeWXiQ7ez0JStfs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "1018094121178",
+    "firebase_url": "https://friendly-chat-25c30.firebaseio.com",
+    "project_id": "friendly-chat-25c30",
+    "storage_bucket": "friendly-chat-25c30.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018094121178:android:75c9efb1eae8e3ec",
+        "android_client_info": {
+          "package_name": "com.example.asheransari.chatingapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018094121178-ognobd24o5oqpmdl0bn585ffoki9ajm6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdDV03mNOUqt4J_qcxGZGUwVzugmwzU0U"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
