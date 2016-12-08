@@ -1,5 +1,6 @@
 package com.example.asheransari.chatingapplication;
 
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -14,7 +15,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -23,6 +28,8 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
+
+//import static com.firebase.ui.auth.ui.AcquireEmailHelper.RC_SIGN_IN;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,7 +49,10 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseDatabase mFirebaseDatabase;
     private DatabaseReference mMessageDatabaseReference;
 
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseAuth.AuthStateListener mAuthStateListener;
 
+    public static final int RC_SIGN_IN = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
         mUserName = ANONYMUS;
 
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+
+        mFirebaseAuth = FirebaseAuth.getInstance();
+
+
         mMessageDatabaseReference = mFirebaseDatabase.getReference().child("messages");
 
         mProgressBar = (ProgressBar)findViewById(R.id.progressBar);
@@ -101,12 +115,6 @@ public class MainActivity extends AppCompatActivity {
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mMessageEditText.setText("");
-            }
-        });
-        mSendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
                 FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(),mUserName,null);
                 mMessageDatabaseReference.push().setValue(friendlyMessage);
@@ -143,6 +151,22 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         mMessageDatabaseReference.addChildEventListener(mChildEventListener);
+        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser  user = firebaseAuth.getCurrentUser();
+                if (user !=null)
+                {
+                    Toast.makeText(MainActivity.this, "You're now Signed in. Welcome to Friendly Chat!", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    startActivityForResult(AuthUI.getInstance()
+                            .createSignInIntentBuilder().setIsSmartLockEnabled(false)
+                            .setProviders(AuthUI.EMAIL_PROVIDER,AuthUI.GOOGLE_PROVIDER).build(),RC_SIGN_IN);
+                }
+            }
+        };
     }
 
 
@@ -159,4 +183,16 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+    }
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+    }
 }
