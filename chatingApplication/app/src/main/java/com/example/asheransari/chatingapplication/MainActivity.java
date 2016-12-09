@@ -1,5 +1,6 @@
 package com.example.asheransari.chatingapplication;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -51,8 +52,10 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+    ChildEventListener mChildEventListener = null;
 
     public static final int RC_SIGN_IN = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,14 +70,13 @@ public class MainActivity extends AppCompatActivity {
 
         mMessageDatabaseReference = mFirebaseDatabase.getReference().child("messages");
 
-        mProgressBar = (ProgressBar)findViewById(R.id.progressBar);
-        mMessageListView = (ListView)findViewById(R.id.messageListView);
-        mPhotoPickerButton = (ImageButton)findViewById(R.id.photoPickerbutton);
-        mMessageEditText = (EditText)findViewById(R.id.messageEditText);
-        mSendButton = (Button)findViewById(R.id.sendButton);
-        ChildEventListener mChildEventListener = null;
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mMessageListView = (ListView) findViewById(R.id.messageListView);
+        mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerbutton);
+        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
+        mSendButton = (Button) findViewById(R.id.sendButton);
         final List<FriendlyMessage> friendlyMessages = new ArrayList<>();
-        mMessageAdapter = new MessageAdapter(this,R.layout.list_message,friendlyMessages);
+        mMessageAdapter = new MessageAdapter(this, R.layout.list_message, friendlyMessages);
         mMessageListView.setAdapter(mMessageAdapter);
 
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -94,12 +96,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (charSequence.toString().trim().length()>0)
-                {
+                if (charSequence.toString().trim().length() > 0) {
                     mSendButton.setEnabled(true);
-                }
-                else
-                {
+                } else {
                     mSendButton.setEnabled(false);
                 }
             }
@@ -116,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(),mUserName,null);
+                FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(), mUserName, null);
                 mMessageDatabaseReference.push().setValue(friendlyMessage);
 
                 mMessageEditText.setText("");
@@ -154,16 +153,15 @@ public class MainActivity extends AppCompatActivity {
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser  user = firebaseAuth.getCurrentUser();
-                if (user !=null)
-                {
-                    Toast.makeText(MainActivity.this, "You're now Signed in. Welcome to Friendly Chat!", Toast.LENGTH_SHORT).show();
-                }
-                else
-                {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+//                    Toast.makeText(MainActivity.this, "You're now Signed in. Welcome to Friendly Chat!", Toast.LENGTH_SHORT).show();
+                    onSignedInInitialize(user.getDisplayName());
+                } else {
+                    onSignoutCleanup();
                     startActivityForResult(AuthUI.getInstance()
                             .createSignInIntentBuilder().setIsSmartLockEnabled(false)
-                            .setProviders(AuthUI.EMAIL_PROVIDER,AuthUI.GOOGLE_PROVIDER).build(),RC_SIGN_IN);
+                            .setProviders(AuthUI.EMAIL_PROVIDER, AuthUI.GOOGLE_PROVIDER).build(), RC_SIGN_IN);
                 }
             }
         };
@@ -171,28 +169,102 @@ public class MainActivity extends AppCompatActivity {
 
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
+    public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
+        super.onActivityResult(requestCode,resultCode,data);
+        if (requestCode == RC_SIGN_IN)
+        {
+            if (resultCode == RESULT_OK)
+            {
+                Toast.makeText(this, "Signed in!!", Toast.LENGTH_SHORT).show();
+            }else if(resultCode == RESULT_CANCELED)
+            {
+                Toast.makeText(this, "Signed in Cancelled!!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
         return true;
     }
+
     @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
-        return super.onOptionsItemSelected(item);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId())
+        {
+            case R.id.sign_out_menu:
+                AuthUI.getInstance().signOut(this);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
-    protected void onPause()
-    {
-        super.onPause();
-        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+    protected void onPause() {
+        if (mAuthStateListener != null) {
+            super.onPause();
+            mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+        }
+        detachDatabaseReadListner();
+        mMessageAdapter.clear();
     }
+
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
         super.onResume();
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+    }
+
+    private void onSignedInInitialize(String userName) {
+        mUserName = userName;
+        attachDatabaseReadListner();
+    }
+
+    private void onSignoutCleanup() {
+        mUserName = ANONYMUS;
+        mMessageAdapter.clear();
+        detachDatabaseReadListner();
+    }
+
+    private void attachDatabaseReadListner() {
+        if (mChildEventListener == null) {
+            mChildEventListener = new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                    mMessageAdapter.add(friendlyMessage);
+                }
+
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                }
+
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                }
+
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                }
+
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            };
+            mMessageDatabaseReference.addChildEventListener(mChildEventListener);
+        }
+    }
+
+    private void detachDatabaseReadListner() {
+        if (mChildEventListener!=null) {
+            mMessageDatabaseReference.removeEventListener(mChildEventListener);
+            mChildEventListener = null;
+        }
+
     }
 }
