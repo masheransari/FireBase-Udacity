@@ -37,7 +37,7 @@ public class MessageAdapter extends ArrayAdapter<FriendlyMessage>{
 
         FriendlyMessage message = getItem(position);
 
-        boolean isPhoto = message.getPhotoUrl() !=null;
+        boolean isPhoto = message.getPhotoUrl() != null;
 
         if (isPhoto)
         {

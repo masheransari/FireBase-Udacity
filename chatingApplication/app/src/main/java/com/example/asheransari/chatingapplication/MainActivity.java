@@ -1,6 +1,7 @@
 package com.example.asheransari.chatingapplication;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +20,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
@@ -26,9 +28,15 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.app.Activity.RESULT_CANCELED;
+import static android.app.Activity.RESULT_OK;
 
 //import static com.firebase.ui.auth.ui.AcquireEmailHelper.RC_SIGN_IN;
 
@@ -53,8 +61,12 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     ChildEventListener mChildEventListener = null;
+    private FirebaseStorage mFirebaseStorage;
+    private StorageReference mChatPhotoStorageReference;
 
     public static final int RC_SIGN_IN = 1;
+
+    public static final int RC_PHOT_PICKER = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +79,11 @@ public class MainActivity extends AppCompatActivity {
 
         mFirebaseAuth = FirebaseAuth.getInstance();
 
+        mFirebaseStorage = FirebaseStorage.getInstance();
 
         mMessageDatabaseReference = mFirebaseDatabase.getReference().child("messages");
+
+        mChatPhotoStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mMessageListView = (ListView) findViewById(R.id.messageListView);
@@ -85,8 +100,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-            }
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType( "image/jpeg");
+//                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_LOCAL_ONLY,true);
+                startActivityForResult(Intent.createChooser(intent,"Complete Action Using"),RC_PHOT_PICKER);}
         });
+
 
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -150,6 +170,8 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         mMessageDatabaseReference.addChildEventListener(mChildEventListener);
+
+
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -157,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
                 if (user != null) {
 //                    Toast.makeText(MainActivity.this, "You're now Signed in. Welcome to Friendly Chat!", Toast.LENGTH_SHORT).show();
                     onSignedInInitialize(user.getDisplayName());
+                    Toast.makeText(MainActivity.this, ""+user.getDisplayName(), Toast.LENGTH_SHORT).show();
                 } else {
                     onSignoutCleanup();
                     startActivityForResult(AuthUI.getInstance()
@@ -169,21 +192,34 @@ public class MainActivity extends AppCompatActivity {
 
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode,resultCode,data);
-        if (requestCode == RC_SIGN_IN)
-        {
-            if (resultCode == RESULT_OK)
-            {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "Signed in!!", Toast.LENGTH_SHORT).show();
-            }else if(resultCode == RESULT_CANCELED)
-            {
+            } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Signed in Cancelled!!", Toast.LENGTH_SHORT).show();
                 finish();
             }
         }
-    }
+             else if(requestCode ==  RC_PHOT_PICKER && resultCode ==  RESULT_OK)
+            {
+                Uri SelectImageUrI = data.getData();
+                StorageReference PhotoRef = mChatPhotoStorageReference.child(SelectImageUrI.getLastPathSegment());
+
+                PhotoRef.putFile(SelectImageUrI).addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Uri downloaduri = taskSnapshot.getDownloadUrl();
+                        FriendlyMessage friendlyMessage =
+                                new FriendlyMessage(null,mUserName,downloaduri.toString());
+                        mMessageDatabaseReference.push().setValue(friendlyMessage);
+
+                    }
+                });
+
+            }
+        }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -194,8 +230,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId())
-        {
+        switch (item.getItemId()) {
             case R.id.sign_out_menu:
                 AuthUI.getInstance().signOut(this);
                 return true;
@@ -261,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void detachDatabaseReadListner() {
-        if (mChildEventListener!=null) {
+        if (mChildEventListener != null) {
             mMessageDatabaseReference.removeEventListener(mChildEventListener);
             mChildEventListener = null;
         }
