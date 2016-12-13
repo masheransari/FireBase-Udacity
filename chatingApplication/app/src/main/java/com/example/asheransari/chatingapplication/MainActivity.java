@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -76,13 +77,10 @@ public class MainActivity extends AppCompatActivity {
         mUserName = ANONYMUS;
 
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-
         mFirebaseAuth = FirebaseAuth.getInstance();
-
         mFirebaseStorage = FirebaseStorage.getInstance();
 
         mMessageDatabaseReference = mFirebaseDatabase.getReference().child("messages");
-
         mChatPhotoStorageReference = mFirebaseStorage.getReference().child("chat_photos");
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -93,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         final List<FriendlyMessage> friendlyMessages = new ArrayList<>();
         mMessageAdapter = new MessageAdapter(this, R.layout.list_message, friendlyMessages);
         mMessageListView.setAdapter(mMessageAdapter);
-
+        mMessageAdapter.clear();
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
         mPhotoPickerButton.setOnClickListener(new View.OnClickListener() {
@@ -142,34 +140,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mChildEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                mMessageAdapter.add(friendlyMessage);
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        mMessageDatabaseReference.addChildEventListener(mChildEventListener);
+//        mChildEventListener = new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+//                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+//                mMessageAdapter.add(friendlyMessage);
+//            }
+//
+//            @Override
+//            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+//
+//            }
+//
+//            @Override
+//            public void onChildRemoved(DataSnapshot dataSnapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        };
+//        mMessageDatabaseReference.addChildEventListener(mChildEventListener);
 
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
@@ -179,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                 if (user != null) {
 //                    Toast.makeText(MainActivity.this, "You're now Signed in. Welcome to Friendly Chat!", Toast.LENGTH_SHORT).show();
                     onSignedInInitialize(user.getDisplayName());
-                    Toast.makeText(MainActivity.this, ""+user.getDisplayName(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "USER NAME = "+user.getDisplayName(), Toast.LENGTH_SHORT).show();
                 } else {
                     onSignoutCleanup();
                     startActivityForResult(AuthUI.getInstance()
@@ -271,25 +269,22 @@ public class MainActivity extends AppCompatActivity {
             mChildEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+//                    mMessageAdapter.clear();
+//                    FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
                     FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                    Log.e("MainActivity",""+dataSnapshot.getValue());
+                    Log.e("MainActivity",""+friendlyMessage);
                     mMessageAdapter.add(friendlyMessage);
+//                    mMessageListView.setAdapter(mMessageAdapter);
                 }
 
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) { }
 
-                }
+                public void onChildRemoved(DataSnapshot dataSnapshot)  { }
 
-                public void onChildRemoved(DataSnapshot dataSnapshot) {
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
 
-                }
-
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-                }
-
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
+                public void onCancelled(DatabaseError databaseError) { }
             };
             mMessageDatabaseReference.addChildEventListener(mChildEventListener);
         }

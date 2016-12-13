@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.database.ChildEventListener;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class MessageAdapter extends ArrayAdapter<FriendlyMessage>{
 
     public MessageAdapter(Context context, int resource, List<FriendlyMessage> list)
     {
-        super(context,resource,list);
+        super(context,0,list);
     }
 
     @Override
@@ -54,4 +55,5 @@ public class MessageAdapter extends ArrayAdapter<FriendlyMessage>{
 
         return converView;
     }
+
 }
